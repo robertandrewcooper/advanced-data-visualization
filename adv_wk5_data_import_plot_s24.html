@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Squada+One&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap" rel="stylesheet" />
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <title>Document</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        
+        svg {
+            outline: thin dashed red;
+            background-color: white;
+        }
+        
+        .tick text {
+            font-size: 20px;
+            font-family: "Lato", sans-serif;
+        }
+        
+        text {
+            font-family: "Squada One", sans-serif;
+            font-size: 29px;
+        }
+    </style>
+
+</head>
+
+<body>
+    <script>
+        const carz_data = "./mtcarz_full.csv";
+
+        // Often we need to parse or recode our variables. 
+        // Check to see if your numerics are, in fact, numerics.
+        // In this script example, variables that should be numbers are strings. 
+        // The unary (+) operator evaluates the variables/properties
+        // ...and attempts to turn them into numerics. 
+
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        const svg = d3.select('body')
+            .append('svg')
+            .attr('width', width)
+            .attr('height', height);
+
+        const parseRow = (d) => {
+            d.mpg = +d.mpg;
+            d.wt = +d.wt;
+            d.hp = +d.hp; // Unary plus operator tries to make numerics. 
+            return d;
+        };
+
+        // One way to read data in is with d3.csv and the then() method.
+        // The other way is the async/await approach. Dealer's choice!
+        // Each is built upon a 'promise.' 
+        // Fetching the data is an asyncrhonous process that takes an uncertain 
+        // ... amount of time. Think, "once the data are fetched, then..."
+
+        /*  d3.csv(iris_dat, parseRow).then((data) => {
+        console.log(data);
+        // Inside the function you do all the work with the data. 
+    });
+ */
+        // The async/await version. 
+
+        const main = async() => {
+            const data = await d3.csv(carz_data, parseRow);
+            console.log(data);
+
+            const xValue = (d) => d.wt;
+            const yValue = (d) => d.mpg;
+
+            // console.log(xValue);
+
+            // The margins will help us create space for axes. 
+
+            margin = {
+                top: 75,
+                right: 75,
+                bottom: 75,
+                left: 90,
+            };
+
+            // The d3.extent function returns an array of min and max value. 
+
+            x = d3.scaleLinear()
+                .domain(d3.extent(data, xValue)) // THE DATA SPACE. 
+                .range([margin.left, width - margin.right]); // THE PIXEL SPACE. 
+
+            y = d3.scaleLinear()
+                .domain(d3.extent(data, yValue)) // THE DATA SPACE. 
+                .range([height - margin.bottom, margin.top]); // THE PIXEL SPACE. 
+
+            myColor = d3.scaleOrdinal() // categorical scale for color!
+                .domain(["4", "6", "8"])
+                .range(["red", "#3c6997", "#51cb20"]);
+
+
+            // console.log(y.range());
+
+            // The below creates the points for the plot itself in pixel space. 
+            // Did you know that SVG accepts floating point decimal values too?
+
+            const points = data.map((d) => ({
+                x: x(xValue(d)), // This scales our x to the pixel space.
+                y: y(yValue(d)), // This scales our y to the pixel space. 
+                cyl: d.cyl
+            }));
+
+            console.log(points);
+
+            svg
+                .selectAll('circle')
+                .data(points)
+                .join('circle') // Enter/update/exit; 
+                .attr('cx', d => d.x)
+                .attr('cy', d => d.y)
+                .attr('r', 7)
+                .attr("fill", d => myColor(d.cyl))
+                .attr("opacity", 0.7)
+                .attr('stroke', 'black');
+
+            // Okay, now let's add our axes. Need margins for this to work. 
+
+            svg.append('g') // 'g' ensure that a block will apply to only those elements.
+                .attr('transform', `translate(${margin.left},0)`)
+                .call(d3.axisLeft(y));
+
+            svg.append('g')
+                .attr('transform', `translate(0,${height - margin.bottom})`)
+                .call(d3.axisBottom(x));
+
+            text1 = "Heavy Cars Eat Gas! More News at 11!"; // Set a title text. 
+
+            svg.append('g')
+                .append('text')
+                .text(text1)
+                .style("text-anchor", "middle") // Ensuring centering. 
+                .attr("x", width / 2) // Centered, if you like that. 
+                .attr("y", margin.top); // Just a margin away from the tippy-top
+
+            owl = "/.";
+
+            svg.append('g')
+            .append('image')
+            .image("./owl.svg");
+
+        };
+
+        main();
+
+    </script>
+</body>
+
+</html>
